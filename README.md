@@ -79,7 +79,7 @@ singularity build containers/pcn_uv.sif containers/pcn_uv.def
 sbatch cluster/run_pcn_gridsearch.slurm --n-samples 250 --num-epochs 3
 ```
 
-The Slurm job binds the checkout at `/workspace`, uses the image's pre-synced dependencies, writes CSVs to `out/gridsearch/`, and runs on CUDA.
+The Slurm job binds the checkout at `/workspace`, uses the image's pre-synced CUDA 12.8 dependencies, writes CSVs to `out/gridsearch/`, and runs on CUDA. Rebuild the image whenever `pyproject.toml` or `uv.lock` changes.
 
 ## Background
 
