@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PROJECT_ROOT="$SLURM_SUBMIT_DIR"
 CONTAINER_IMAGE="$PROJECT_ROOT/containers/pcn_uv.sif"
 
 mkdir -p "$PROJECT_ROOT/out/gridsearch"
