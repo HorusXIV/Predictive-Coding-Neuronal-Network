@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 
 from pcn.model import NEGATIVE_SLOPE, PredictiveCodingNetwork
@@ -31,12 +32,18 @@ class MLP(nn.Module):
         return self.net(x.reshape(x.shape[0], self.input_dim))
 
 
-def build_pcn(dims, output_dim):
-    return PredictiveCodingNetwork(dims=list(dims), output_dim=output_dim)
+def build_pcn(dims, output_dim, negative_slope=NEGATIVE_SLOPE):
+    # activation_deriv must match activation, so both close over the same slope.
+    return PredictiveCodingNetwork(
+        dims=list(dims),
+        output_dim=output_dim,
+        activation=nn.LeakyReLU(negative_slope),
+        activation_deriv=lambda a: torch.where(a > 0, 1.0, negative_slope),
+    )
 
 
-def build_mlp(dims, output_dim):
-    return MLP(dims, output_dim)
+def build_mlp(dims, output_dim, negative_slope=NEGATIVE_SLOPE):
+    return MLP(dims, output_dim, negative_slope)
 
 
 def count_params(model):

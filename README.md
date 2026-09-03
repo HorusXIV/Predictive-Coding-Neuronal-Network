@@ -63,9 +63,12 @@ uv run pcn-gridsearch                          # 12 samples, 5-fold CV
 uv run pcn-gridsearch --n-samples 20 --num-epochs 5
 ```
 
-`space.py` draws candidates with Latin Hypercube sampling. `search.py` scores each candidate with 5-fold cross-validation, all folds shared across every candidate. `data.py` loads only the MNIST train split.
+`space.py` draws candidates with Latin Hypercube sampling over nine dimensions: `eta_infer`, `T_infer`, `lr`, `weight_decay`, `negative_slope`, `batch_size`, `hidden_width`, `n_hidden_layers`, and the optimizer (Adam or SGD). `search.py` scores each candidate with 5-fold cross-validation, all folds shared across every candidate. `data.py` loads only the MNIST train split.
 
-Results land in `out/gridsearch/results.csv`, sorted by mean validation accuracy.
+Two tables land in `out/gridsearch/`, joinable on `config_id`:
+
+- `folds.csv`: one row per (config, fold), every metric raw. Model from this one.
+- `results.csv`: one row per config, with mean, std, min and max for accuracy, macro F1, cross-entropy, the free energies and the timings.
 
 ## Background
 

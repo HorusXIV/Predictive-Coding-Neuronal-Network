@@ -1,11 +1,23 @@
-"""Search PCN hyperparameters (eta_infer, T_infer, lr, weight_decay) with a
-Latin Hypercube space-filling design, score each config by 5-fold
-cross-validation on the MNIST *train* split, and write a results table.
+"""Search PCN hyperparameters with a Latin Hypercube space-filling design,
+score each candidate by 5-fold cross-validation on the MNIST *train* split,
+and write both a per-fold table and a summary table.
 
-Test data is never loaded by this command -- see :mod:`gridsearch.data`. The
-same fold split and per-fold seeding is reused across every sampled config
-(see :func:`gridsearch.search.cross_validate`), so the table's ranking
-reflects the hyperparameters, not which config got lucky folds.
+Test data is never loaded by this command; see :mod:`gridsearch.data`. Every
+candidate is scored on the same folds with the same per-fold seeding (see
+:func:`gridsearch.search.cross_validate`), so the ranking reflects the
+hyperparameters rather than which candidate drew easier folds.
+
+Two files land in ``out/gridsearch/``:
+
+``folds.csv``
+    One row per (config, fold), with every validation metric and timing left
+    raw. This is the long-format table to model from: real fold-level
+    observations, rather than points resampled from an assumed normal.
+``results.csv``
+    One row per config, with mean, std, min and max for each metric, sorted
+    by mean validation accuracy.
+
+Both carry a ``config_id`` column, so a summary row joins back onto its folds.
 """
 
 from __future__ import annotations
@@ -15,10 +27,11 @@ from pathlib import Path
 
 import pandas as pd
 import torch
+from tqdm import tqdm
 
 from .data import load_mnist_train
-from .search import cross_validate
-from .space import sample_configs
+from .search import aggregate, cross_validate
+from .space import dims_for_config, sample_configs
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -27,7 +40,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--n-samples", type=int, default=12)
     parser.add_argument("--num-epochs", type=int, default=3)
-    parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--data-dir", default=str(REPO_ROOT / "data"))
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "out" / "gridsearch")
@@ -43,22 +55,39 @@ def main():
         f"train_size={len(dataset)} (5-fold CV, train data only)"
     )
 
-    rows = []
-    for i, config in enumerate(configs):
-        print(f"[{i + 1}/{len(configs)}] {config}")
-        result = cross_validate(config, dataset, args.num_epochs, args.batch_size, args.device, args.seed)
-        rows.append({**config, **result})
+    fold_frames, summary_rows = [], []
+    for config_id, config in enumerate(tqdm(configs, desc="configs", unit="cfg")):
+        fold_rows = cross_validate(config, dataset, args.num_epochs, args.device, args.seed)
+
+        labelled = {
+            "config_id": config_id,
+            "dims": str(dims_for_config(config, 784)),
+            **config,
+        }
+        fold_frames.append(pd.DataFrame([{**labelled, **row} for row in fold_rows]))
+        summary_rows.append({**labelled, **aggregate(fold_rows)})
+
+        summary = summary_rows[-1]
         print(
-            f"  mean_val_accuracy={result['mean_val_accuracy']:.4f} "
-            f"+/- {result['std_val_accuracy']:.4f}  ({result['elapsed_s']:.1f}s)"
+            f"[{config_id + 1}/{len(configs)}] {config}\n"
+            f"  val_accuracy={summary['mean_val_accuracy']:.4f} +/- {summary['std_val_accuracy']:.4f}"
+            f"  val_f1_macro={summary['mean_val_f1_macro']:.4f} +/- {summary['std_val_f1_macro']:.4f}"
+            f"  fit={summary['mean_fit_time_s']:.1f}s"
         )
 
-    table = pd.DataFrame(rows).sort_values("mean_val_accuracy", ascending=False).reset_index(drop=True)
-    csv_path = args.out_dir / "results.csv"
-    table.to_csv(csv_path, index=False)
+        # Written every config, so an interrupted search keeps what it finished.
+        folds = pd.concat(fold_frames, ignore_index=True)
+        folds.to_csv(args.out_dir / "folds.csv", index=False)
+        table = (
+            pd.DataFrame(summary_rows)
+            .sort_values("mean_val_accuracy", ascending=False)
+            .reset_index(drop=True)
+        )
+        table.to_csv(args.out_dir / "results.csv", index=False)
 
     print(f"\nbest config:\n{table.iloc[0]}")
-    print(f"\nfull results table written to {csv_path}")
+    print(f"\n{len(folds)} fold rows -> {args.out_dir / 'folds.csv'}")
+    print(f"{len(table)} config rows -> {args.out_dir / 'results.csv'}")
 
 
 if __name__ == "__main__":
