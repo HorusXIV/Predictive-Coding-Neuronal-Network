@@ -8,12 +8,6 @@ A PyTorch implementation of a predictive-coding network (PCN) with a supervised 
 uv sync
 ```
 
-`uv sync` installs `pcn`, `comparison`, and `gridsearch` in editable mode from `src/`, plus Jupyter for the notebooks:
-
-```bash
-uv run jupyter lab
-```
-
 ## Layout
 
 ```
