@@ -2,6 +2,10 @@
 score each candidate by 5-fold cross-validation on the MNIST *train* split,
 and write both a per-fold table and a summary table.
 
+``--n-samples`` is the number of configurations *per optimizer*. With the
+three configured optimizers, the command evaluates three times that many
+configurations in total.
+
 Test data is never loaded by this command; see :mod:`gridsearch.data`. Every
 candidate is scored on the same folds with the same per-fold seeding (see
 :func:`gridsearch.search.cross_validate`), so the ranking reflects the
@@ -38,7 +42,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--n-samples", type=int, default=12)
+    parser.add_argument("--n-samples", type=int, default=100)
     parser.add_argument("--num-epochs", type=int, default=3)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--data-dir", default=str(REPO_ROOT / "data"))
@@ -51,7 +55,8 @@ def main():
     configs = sample_configs(args.n_samples, args.seed)
 
     print(
-        f"device={args.device} n_samples={args.n_samples} num_epochs={args.num_epochs} "
+        f"device={args.device} n_samples_per_optimizer={args.n_samples} "
+        f"total_configs={len(configs)} num_epochs={args.num_epochs} "
         f"train_size={len(dataset)} (5-fold CV, train data only)"
     )
 

@@ -59,11 +59,11 @@ Every trial's summary lands in `out/results.csv`. Its full per-epoch history goe
 `eta_infer`, `T_infer`, `lr`, and `weight_decay` in the notebooks above were hand-picked. This searches them instead.
 
 ```bash
-uv run pcn-gridsearch                          # 12 samples, 5-fold CV
+uv run pcn-gridsearch                          # 100 samples per optimizer, 5-fold CV
 uv run pcn-gridsearch --n-samples 20 --num-epochs 5
 ```
 
-`space.py` draws candidates with Latin Hypercube sampling over nine dimensions: `eta_infer`, `T_infer`, `lr`, `weight_decay`, `negative_slope`, `batch_size`, `hidden_width`, `n_hidden_layers`, and the optimizer (Adam or SGD). `search.py` scores each candidate with 5-fold cross-validation, all folds shared across every candidate. `data.py` loads only the MNIST train split.
+`space.py` draws a separate Latin Hypercube design for each optimizer over the eight non-categorical dimensions: `eta_infer`, `T_infer`, `lr`, `weight_decay`, `negative_slope`, `batch_size`, `hidden_width`, and `n_hidden_layers`. The `--n-samples` value is therefore per optimizer: with Adam, SGD, and Muon, `--n-samples 250` evaluates 750 configurations total. `search.py` scores each candidate with 5-fold cross-validation, all folds shared across every candidate. `data.py` loads only the MNIST train split.
 
 Two tables land in `out/gridsearch/`, joinable on `config_id`:
 

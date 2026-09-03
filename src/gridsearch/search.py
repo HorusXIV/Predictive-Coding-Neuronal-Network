@@ -23,9 +23,14 @@ _NON_METRIC_KEYS = {"fold", "n_val", "n_params"}
 
 
 def _build_optimizer(config, model):
-    if config["optimizer"] == "adam":
+    optimizer = config["optimizer"]
+    if optimizer == "adam":
         return torch.optim.Adam(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
-    return torch.optim.SGD(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
+    if optimizer == "sgd":
+        return torch.optim.SGD(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
+    if optimizer == "muon":
+        return torch.optim.Muon(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
+    raise ValueError(f"Unknown optimizer: {optimizer!r}")
 
 
 def cross_validate(config, dataset, num_epochs, device, seed) -> list[dict]:
