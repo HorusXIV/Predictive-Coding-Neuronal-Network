@@ -1,7 +1,7 @@
 [project]
 name = "predicitve-coding"
 version = "0.1.0"
-description = "Add your description here"
+description = "A predictive-coding network in PyTorch, compared against an equivalent MLP"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
