@@ -70,6 +70,17 @@ Two tables land in `out/gridsearch/`, joinable on `config_id`:
 - `folds.csv`: one row per (config, fold), every metric raw. Model from this one.
 - `results.csv`: one row per config, with mean, std, min and max for accuracy, macro F1, cross-entropy, the free energies and the timings.
 
+## Cluster
+
+Build the locked grid-search environment once, then submit the search from the repository root:
+
+```bash
+singularity build containers/pcn_uv.sif containers/pcn_uv.def
+sbatch cluster/run_pcn_gridsearch.slurm --n-samples 250 --num-epochs 3
+```
+
+The Slurm job binds the checkout at `/workspace`, uses the image's pre-synced dependencies, writes CSVs to `out/gridsearch/`, and runs on CUDA.
+
 ## Background
 
 - Stenlund, "Introduction to Predictive Coding Networks for Machine Learning" (arXiv:2506.06332)
